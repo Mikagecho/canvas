@@ -182,10 +182,14 @@
     let draggedItem = null;
     let timerInterval = null;
     let timeLeft = 60;
+    
     // --- Touch Drag State ---
     let touchDragClone = null;
     let touchOffsetX = 0;
     let touchOffsetY = 0;
+    let scrollDirection = 0; // -1 for up, 1 for down, 0 for no scroll
+    let isScrolling = false;
+
 
     const initialGameState = {
         selectedTool: null,
@@ -351,30 +355,35 @@
         handleDropLogic(dropZone);
     }
     
-    // --- Touch Handlers (for Mobile) ---
+    // --- Touch Auto-scroll and Handlers ---
+    function scrollLoop() {
+        if (scrollDirection === 0) {
+            isScrolling = false;
+            return;
+        }
+        window.scrollBy(0, 10 * scrollDirection); // scroll speed
+        requestAnimationFrame(scrollLoop);
+    }
+
     function handleTouchStart(e) {
         if (e.touches.length !== 1) return;
         e.preventDefault();
         draggedItem = e.currentTarget;
         const rect = draggedItem.getBoundingClientRect();
 
-        // Create a visual clone for dragging
         touchDragClone = draggedItem.cloneNode(true);
         touchDragClone.classList.add('touch-drag-clone', 'dragging');
         document.body.appendChild(touchDragClone);
         
-        // Calculate offset from touch point to top-left of element
         touchOffsetX = e.touches[0].clientX - rect.left;
         touchOffsetY = e.touches[0].clientY - rect.top;
 
-        // Position the clone
         touchDragClone.style.left = `${e.touches[0].clientX - touchOffsetX}px`;
         touchDragClone.style.top = `${e.touches[0].clientY - touchOffsetY}px`;
         touchDragClone.style.width = `${rect.width}px`;
 
-        draggedItem.classList.add('dragging'); // Hide original
+        draggedItem.classList.add('dragging'); 
         
-        // Activate drop zones
         if(draggedItem.classList.contains('part')) {
             partsTray.classList.add('drop-zone-active');
         } else {
@@ -385,18 +394,36 @@
     function handleTouchMove(e) {
         if (!touchDragClone || e.touches.length !== 1) return;
         e.preventDefault();
-        // Move the clone with the finger
-        touchDragClone.style.left = `${e.touches[0].clientX - touchOffsetX}px`;
-        touchDragClone.style.top = `${e.touches[0].clientY - touchOffsetY}px`;
+        const touch = e.touches[0];
+        
+        touchDragClone.style.left = `${touch.clientX - touchOffsetX}px`;
+        touchDragClone.style.top = `${touch.clientY - touchOffsetY}px`;
+
+        const hotZone = window.innerHeight * 0.15; // 15% of screen height is the hot zone
+        if (touch.clientY < hotZone) {
+            scrollDirection = -1;
+            if (!isScrolling) {
+                isScrolling = true;
+                requestAnimationFrame(scrollLoop);
+            }
+        } else if (touch.clientY > window.innerHeight - hotZone) {
+            scrollDirection = 1;
+            if (!isScrolling) {
+                isScrolling = true;
+                requestAnimationFrame(scrollLoop);
+            }
+        } else {
+            scrollDirection = 0;
+        }
     }
 
     function handleTouchEnd(e) {
+        scrollDirection = 0; // Stop auto-scrolling
         if (!touchDragClone || !draggedItem) return;
 
-        // Get the element under the finger
         const touchX = e.changedTouches[0].clientX;
         const touchY = e.changedTouches[0].clientY;
-        touchDragClone.style.display = 'none'; // Hide clone to find what's underneath
+        touchDragClone.style.display = 'none';
         const droppedOnElement = document.elementFromPoint(touchX, touchY);
         touchDragClone.style.display = '';
 
@@ -406,7 +433,6 @@
             handleDropLogic(dropZone);
         }
 
-        // Clean up
         draggedItem.classList.remove('dragging');
         document.body.removeChild(touchDragClone);
         touchDragClone = null;
