@@ -10,6 +10,7 @@
         body {
             font-family: 'Noto Sans JP', sans-serif;
             touch-action: manipulation;
+            overflow-x: hidden;
         }
         .game-container {
             width: 100%;
@@ -43,24 +44,16 @@
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
             z-index: 1000;
         }
-        /* Style for touch drag clone */
         .touch-drag-clone {
-            position: fixed; /* Use fixed positioning to move freely on screen */
-            pointer-events: none; /* The clone should not intercept any events */
+            position: fixed;
+            pointer-events: none;
             z-index: 1001;
-            transition: none; /* No transition for smooth movement */
+            transition: none;
         }
 
         /* --- Part Specific Styles --- */
-        .screen {
-            background-color: #1e1e1e;
-            color: white;
-        }
-        #cracked-screen-svg {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-        }
+        .screen { background-color: #1e1e1e; color: white; }
+        #cracked-screen-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .battery { background-color: #4a4a4a; color: #ccc; font-weight: bold; }
         .camera { background-color: #1f2937; border: 2px solid #4b5563; }
         .board { background-color: #047857; }
@@ -70,56 +63,53 @@
         .new-board { background-color: #10b981; }
 
         /* --- Drop Zones & Tools --- */
-        .drop-zone-active {
-            outline: 3px dashed #3b82f6;
-            outline-offset: 4px;
-            background-color: rgba(59, 130, 246, 0.1);
+        .drop-zone-active { outline: 3px dashed #3b82f6; outline-offset: 4px; background-color: rgba(59, 130, 246, 0.1); }
+        .tool-item { cursor: pointer; border: 3px solid transparent; display: flex; align-items: center; justify-content: center; }
+        .tool-item.selected { border-color: #f59e0b; transform: scale(1.1); box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
+        .screw { position: absolute; width: 12px; height: 12px; background-color: #9ca3af; border-radius: 50%; cursor: pointer; transition: all 0.3s; }
+        .screw:hover { background-color: #e5e7eb; }
+
+        /* --- NEW Explosion Animation --- */
+        .exploding-part {
+            animation-duration: 2.5s;
+            animation-timing-function: cubic-bezier(0.1, 0.8, 0.2, 1);
+            animation-fill-mode: forwards;
         }
-        .tool-item {
-            cursor: pointer;
-            border: 3px solid transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+
+        .explode-screen { animation-name: explode-screen; }
+        .explode-battery { animation-name: explode-battery; }
+        .explode-camera { animation-name: explode-camera; }
+        .explode-board { animation-name: explode-board; }
+
+        @keyframes explode-screen {
+            to { transform: translate(-150px, -200px) rotate(-45deg) scale(0.5); opacity: 0; }
         }
-        .tool-item.selected {
-            border-color: #f59e0b;
-            transform: scale(1.1);
-            box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+        @keyframes explode-battery {
+            to { transform: translate(100px, 250px) rotate(30deg) scale(0.5); opacity: 0; }
         }
-        .screw {
+        @keyframes explode-camera {
+            to { transform: translate(200px, -150px) rotate(90deg) scale(0.5); opacity: 0; }
+        }
+        @keyframes explode-board {
+            to { transform: translate(0px, 0px) rotate(5deg) scale(0.4); opacity: 0; }
+        }
+        
+        .flash {
             position: absolute;
-            width: 12px;
-            height: 12px;
-            background-color: #9ca3af;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.3s;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: white;
+            opacity: 0;
+            animation: flash-bang 2s ease-out; /* Slowed down the flash */
+            pointer-events: none;
+            z-index: 99;
         }
-        .screw:hover {
-            background-color: #e5e7eb;
+        @keyframes flash-bang {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
         }
-
-        /* --- Explosion Animation --- */
-        .exploding {
-            animation: shake 0.2s 4, explode-color 0.8s forwards;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px) rotate(-3deg); }
-            75% { transform: translateX(10px) rotate(3deg); }
-        }
-        @keyframes explode-color {
-            0% { background-color: #1a1a1a; }
-            50% { background-color: #ef4444; box-shadow: 0 0 50px #f87171;}
-            100% { background-color: #111; transform: scale(0.9); opacity: 0.5; box-shadow: none;}
-        }
-
+        
         /* --- Layout & Modal --- */
-        .parts-tray, .tools-container {
-            border: 2px dashed #9ca3af;
-            min-height: 150px;
-        }
+        .parts-tray, .tools-container { border: 2px dashed #9ca3af; min-height: 150px; }
         #modal.hidden { display: none; }
 
     </style>
@@ -128,7 +118,8 @@
 
     <div class="w-full max-w-md mb-4 text-center">
         <h1 class="text-3xl font-bold text-gray-800">スマホ修理ゲーム V2</h1>
-        <div id="timer" class="text-4xl font-bold text-red-600 mt-2">01:00</div>
+        <div id="timer" class="text-4xl font-bold text-gray-800 mt-2">01:00</div>
+        <div id="high-score" class="text-lg text-gray-700 font-semibold mt-1"></div>
         <p id="message" class="text-gray-600 mt-2 h-12 p-2 rounded-lg bg-white/50 shadow-inner flex items-center justify-center">ゲームを開始します！</p>
     </div>
 
@@ -171,6 +162,7 @@
     const toolsContainer = document.getElementById('tools-container');
     const messageEl = document.getElementById('message');
     const timerEl = document.getElementById('timer');
+    const highScoreEl = document.getElementById('high-score');
     const resetButton = document.getElementById('reset-button');
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modal-title');
@@ -187,30 +179,23 @@
     let touchDragClone = null;
     let touchOffsetX = 0;
     let touchOffsetY = 0;
-    let scrollDirection = 0; // -1 for up, 1 for down, 0 for no scroll
+    let scrollDirection = 0;
     let isScrolling = false;
 
 
     const initialGameState = {
         selectedTool: null,
         screwsRemoved: false,
-        parts: {
-            screen: { removed: false, installed: false, in: 'game' },
-            battery: { removed: false, installed: false, in: 'game' },
-            camera: { removed: false, installed: false, in: 'game' },
-            board: { removed: false, installed: false, in: 'game' },
-        },
+        parts: { screen: {}, battery: {}, camera: {}, board: {} },
         step: 0,
-        messages: [
-            "割れたスクリーンをドラッグしてトレイに移動させましょう。", "ドライバーを選択して、4つのネジを外してください。", "古いバッテリーをトレイに移動させましょう。", "古いカメラをトレイに移動させてください。", "基板をトレイに移動させましょう。", "新しい基板を本体に取り付けてください。", "新しいカメラを本体に取り付けてください。", "新しいバッテリーを本体に取り付けてください。", "ドライバーを選択し、トレイのネジをクリックして本体に取り付けてください。", "最後に、新しいスクリーンを取り付ければ完了です！", "修理完了です！おめでとうございます！"
-        ]
+        messages: [ "割れたスクリーンをドラッグしてトレイに移動させましょう。", "ドライバーを選択して、4つのネジを外してください。", "古いバッテリーをトレイに移動させましょう。", "古いカメラをトレイに移動させてください。", "基板をトレイに移動させましょう。", "新しい基板を本体に取り付けてください。", "新しいカメラを本体に取り付けてください。", "新しいバッテリーを本体に取り付けてください。", "ドライバーを選択し、トレイのネジをクリックして本体に取り付けてください。", "最後に、新しいスクリーンを取り付ければ完了です！", "修理完了です！おめでとうございます！" ]
     };
     
     function initGame() {
         if (timerInterval) clearInterval(timerInterval);
         gameState = JSON.parse(JSON.stringify(initialGameState));
         gameArea.innerHTML = '';
-        gameArea.classList.remove('exploding');
+        gameArea.style.animation = 'none';
         partsTray.innerHTML = '';
         toolsContainer.innerHTML = '';
 
@@ -219,8 +204,7 @@
         createPart('battery', 'バッテリー', 'battery', 'w-3/4 h-1/2', 50, 12.5);
         createPart('screen', '', 'screen', 'w-full h-full', 0, 0);
 
-        const screenEl = document.getElementById('screen');
-        screenEl.innerHTML = `
+        document.getElementById('screen').innerHTML = `
             <svg id="cracked-screen-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
                 <path d="M 10 0 L 40 50 L 20 100" stroke="rgba(255,255,255,0.2)" stroke-width="0.5" fill="none" />
                 <path d="M 40 50 L 90 60" stroke="rgba(255,255,255,0.2)" stroke-width="0.5" fill="none" />
@@ -245,32 +229,26 @@
         const screwdriver = document.createElement('div');
         screwdriver.id = 'screwdriver';
         screwdriver.className = 'tool-item absolute p-2';
-        screwdriver.innerHTML = `
-            <svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <title>ドライバー</title>
-                <path d="M9 15C9 14.4477 9.44772 14 10 14H14C14.5523 14 15 14.4477 15 15V21C15 21.5523 14.5523 22 14 22H10C9.44772 22 9 21.5523 9 21V15Z" fill="#4A5568"/>
-                <path d="M11 2H13V14H11V2Z" fill="#A0AEC0"/>
-                <path d="M10 2H14L13.5 0H10.5L10 2Z" fill="#4A5568"/>
-            </svg>`;
+        screwdriver.innerHTML = `<svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><title>ドライバー</title><path d="M9 15C9 14.4477 9.44772 14 10 14H14C14.5523 14 15 14.4477 15 15V21C15 21.5523 14.5523 22 14 22H10C9.44772 22 9 21.5523 9 21V15Z" fill="#4A5568"/><path d="M11 2H13V14H11V2Z" fill="#A0AEC0"/><path d="M10 2H14L13.5 0H10.5L10 2Z" fill="#4A5568"/></svg>`;
         screwdriver.addEventListener('click', () => selectTool('screwdriver'));
         toolsContainer.appendChild(screwdriver);
 
         updateMessage();
         modal.classList.add('hidden');
         updateVisibility();
+        displayHighScore();
         
-        timeLeft = 60;
+        timeLeft = 60; // Reset timer to 60 seconds
         timerEl.textContent = "01:00";
-        timerEl.classList.remove('text-yellow-500');
+        timerEl.classList.remove('text-yellow-500', 'text-red-600');
+        timerEl.classList.add('text-gray-800');
         timerInterval = setInterval(updateTimer, 1000);
     }
     
     function addDragAndTouchListeners(element) {
-        // For Mouse
         element.draggable = true;
         element.addEventListener('dragstart', handleDragStart);
         element.addEventListener('dragend', handleDragEnd);
-        // For Touch
         element.addEventListener('touchstart', handleTouchStart, { passive: false });
         element.addEventListener('touchmove', handleTouchMove, { passive: false });
         element.addEventListener('touchend', handleTouchEnd);
@@ -300,24 +278,55 @@
         return trayPart;
     }
 
-    // --- Timer, Game Over, Modal ---
+    // --- Timer, Game Over, High Score, Modal ---
+    function displayHighScore() {
+        const highScore = localStorage.getItem('repairGameHighScore');
+        if (highScore) {
+            highScoreEl.textContent = `ハイスコア: ${highScore}秒`;
+        } else {
+            highScoreEl.textContent = 'ハイスコア: まだありません';
+        }
+    }
+
     function updateTimer() {
         timeLeft--;
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
         timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        if (timeLeft <= 10) timerEl.classList.add('text-yellow-500');
-        if (timeLeft <= 0) gameOver();
+        if (timeLeft <= 10 && timeLeft > 0) {
+            timerEl.classList.remove('text-gray-800');
+            timerEl.classList.add('text-yellow-500');
+        } else if (timeLeft <= 0) {
+            timerEl.classList.remove('text-yellow-500');
+            timerEl.classList.add('text-red-600');
+            gameOver();
+        }
     }
 
     function gameOver() {
         clearInterval(timerInterval);
         messageEl.textContent = "時間切れ！スマホが爆発しました…";
-        gameArea.classList.add('exploding');
-        gameArea.innerHTML = '';
+        
+        const existingParts = Array.from(gameArea.querySelectorAll('.part'));
+        
+        while(gameArea.firstChild) {
+            gameArea.removeChild(gameArea.firstChild);
+        }
+
+        const flash = document.createElement('div');
+        flash.className = 'flash';
+        gameArea.appendChild(flash);
+        
+        // Re-add parts to animate them exploding
+        existingParts.forEach(part => {
+            part.classList.remove('part');
+            part.classList.add('exploding-part', `explode-${part.id}`);
+            gameArea.appendChild(part);
+        });
+        
         setTimeout(() => {
             showModal('ゲームオーバー', '残念！時間内に修理できませんでした。', '再挑戦する', 'bg-red-500', 'hover:bg-red-600');
-        }, 800);
+        }, 3000); // Wait for explosion to finish before showing modal
     }
     
     function showModal(title, message, buttonText, ...buttonClasses) {
@@ -330,214 +339,54 @@
         modal.querySelector('.transform').classList.add('scale-100');
     }
     
-    // --- Mouse Drag and Drop Handlers ---
-    function handleDragStart(e) {
-        draggedItem = e.target;
-        setTimeout(() => e.target.classList.add('dragging'), 0);
-        if(e.target.classList.contains('part')) {
-            partsTray.classList.add('drop-zone-active');
-        } else {
-            gameArea.classList.add('drop-zone-active');
-        }
-    }
-
-    function handleDragEnd(e) {
-        if(draggedItem) draggedItem.classList.remove('dragging');
-        draggedItem = null;
-        partsTray.classList.remove('drop-zone-active');
-        gameArea.classList.remove('drop-zone-active');
-    }
-
-    function handleDrop(e) {
-        e.preventDefault();
-        if (!draggedItem) return;
-        const dropZone = e.currentTarget;
-        handleDropLogic(dropZone);
-    }
+    // --- Drag and Drop Handlers ---
+    function handleDragStart(e) { /* ... same as before ... */ }
+    function handleDragEnd(e) { /* ... same as before ... */ }
+    function handleDrop(e) { /* ... same as before ... */ }
+    function scrollLoop() { /* ... same as before ... */ }
+    function handleTouchStart(e) { /* ... same as before ... */ }
+    function handleTouchMove(e) { /* ... same as before ... */ }
+    function handleTouchEnd(e) { /* ... same as before ... */ }
+    function handleDropLogic(dropZone) { /* ... same as before ... */ }
+    function handleRemovePart(partId, partType){ /* ... same as before ... */ }
     
-    // --- Touch Auto-scroll and Handlers ---
-    function scrollLoop() {
-        if (scrollDirection === 0) {
-            isScrolling = false;
-            return;
-        }
-        window.scrollBy(0, 10 * scrollDirection); // scroll speed
-        requestAnimationFrame(scrollLoop);
-    }
-
-    function handleTouchStart(e) {
-        if (e.touches.length !== 1) return;
-        e.preventDefault();
-        draggedItem = e.currentTarget;
-        const rect = draggedItem.getBoundingClientRect();
-
-        touchDragClone = draggedItem.cloneNode(true);
-        touchDragClone.classList.add('touch-drag-clone', 'dragging');
-        document.body.appendChild(touchDragClone);
-        
-        touchOffsetX = e.touches[0].clientX - rect.left;
-        touchOffsetY = e.touches[0].clientY - rect.top;
-
-        touchDragClone.style.left = `${e.touches[0].clientX - touchOffsetX}px`;
-        touchDragClone.style.top = `${e.touches[0].clientY - touchOffsetY}px`;
-        touchDragClone.style.width = `${rect.width}px`;
-
-        draggedItem.classList.add('dragging'); 
-        
-        if(draggedItem.classList.contains('part')) {
-            partsTray.classList.add('drop-zone-active');
-        } else {
-            gameArea.classList.add('drop-zone-active');
-        }
-    }
-
-    function handleTouchMove(e) {
-        if (!touchDragClone || e.touches.length !== 1) return;
-        e.preventDefault();
-        const touch = e.touches[0];
-        
-        touchDragClone.style.left = `${touch.clientX - touchOffsetX}px`;
-        touchDragClone.style.top = `${touch.clientY - touchOffsetY}px`;
-
-        const hotZone = window.innerHeight * 0.15; // 15% of screen height is the hot zone
-        if (touch.clientY < hotZone) {
-            scrollDirection = -1;
-            if (!isScrolling) {
-                isScrolling = true;
-                requestAnimationFrame(scrollLoop);
-            }
-        } else if (touch.clientY > window.innerHeight - hotZone) {
-            scrollDirection = 1;
-            if (!isScrolling) {
-                isScrolling = true;
-                requestAnimationFrame(scrollLoop);
-            }
-        } else {
-            scrollDirection = 0;
-        }
-    }
-
-    function handleTouchEnd(e) {
-        scrollDirection = 0; // Stop auto-scrolling
-        if (!touchDragClone || !draggedItem) return;
-
-        const touchX = e.changedTouches[0].clientX;
-        const touchY = e.changedTouches[0].clientY;
-        touchDragClone.style.display = 'none';
-        const droppedOnElement = document.elementFromPoint(touchX, touchY);
-        touchDragClone.style.display = '';
-
-        const dropZone = droppedOnElement ? droppedOnElement.closest('#game-area, #parts-tray') : null;
-        
-        if (dropZone) {
-            handleDropLogic(dropZone);
-        }
-
-        draggedItem.classList.remove('dragging');
-        document.body.removeChild(touchDragClone);
-        touchDragClone = null;
-        draggedItem = null;
-        partsTray.classList.remove('drop-zone-active');
-        gameArea.classList.remove('drop-zone-active');
-    }
-    
-    // --- Shared Drop Logic ---
-    function handleDropLogic(dropZone) {
-        const partId = draggedItem.id;
-        const partType = draggedItem.dataset.partType;
-        const isFromGameArea = draggedItem.parentElement.id === 'game-area';
-
-        if (dropZone.id === 'parts-tray' && isFromGameArea) {
-            handleRemovePart(partId, partType);
-        }
-        else if (dropZone.id === 'game-area' && !isFromGameArea) {
-            handleInstallPart(partId, partType);
-        }
-    }
-    
-    function handleRemovePart(partId, partType){
-        const canRemove = {
-            screen: gameState.step === 0, battery: gameState.step === 2 && gameState.screwsRemoved, camera: gameState.step === 3, board: gameState.step === 4
+    function handleInstallPart(partId, partType) {
+        const canInstall = {
+            'new-board': gameState.step === 5, 'new-camera': gameState.step === 6, 'new-battery': gameState.step === 7, 'new-screen': gameState.step === 9 && !gameState.screwsRemoved
         };
-        if(canRemove[partType]) {
-            gameState.parts[partType].removed = true;
-            gameState.parts[partType].in = 'tray';
+        if (canInstall[partType]) {
+            const cleanType = partType.replace('new-', '');
+            gameState.parts[cleanType].installed = true;
             gameState.step++;
-            partsTray.appendChild(draggedItem);
-            draggedItem.className = `tray-item ${partType} p-4 text-center font-semibold text-gray-800 relative`;
-            draggedItem.style = '';
+            gameArea.appendChild(draggedItem);
+            const originalData = {
+                board: { text: '基板', size: 'w-[90%] h-[95%]', top: 5, left: 5 },
+                camera: { text: '■', size: 'w-1/4 h-1/6', top: 10, left: 10 },
+                battery: { text: 'バッテリー', size: 'w-3/4 h-1/2', top: 50, left: 12.5 },
+                screen: {
+                    innerHTML: `<svg width="100%" height="100%" viewBox="0 0 400 700" xmlns="http://www.w3.org/2000/svg" class="rounded-2xl"><defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:rgb(167,243,208);" /><stop offset="100%" style="stop-color:rgb(52,211,153);" /></linearGradient></defs><rect width="100%" height="100%" fill="url(#grad1)" /><text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" font-family="Noto Sans JP, sans-serif" font-size="48" font-weight="bold" fill="#1e40af">修理完了！</text><text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="100">🎉</text></svg>`,
+                    size: 'w-full h-full', top: 0, left: 0
+                },
+            };
+
+            draggedItem.id = cleanType;
+            draggedItem.className = `part ${originalData[cleanType].size}`;
+            draggedItem.style.top = `${originalData[cleanType].top}%`;
+            draggedItem.style.left = `${originalData[cleanType].left}%`;
+            if (cleanType === 'screen') {
+                draggedItem.innerHTML = originalData.screen.innerHTML;
+            } else {
+                draggedItem.classList.add('flex', 'items-center', 'justify-center');
+                draggedItem.textContent = originalData[cleanType].text;
+            }
         }
         updateGame();
     }
     
-    function handleInstallPart(partId, partType) {
-        const canInstall = {
-            'new-board': gameState.step === 5, 'new-camera': gameState.step === 6, 'new-battery': gameState.step === 7, 'new-screen': gameState.step === 9 && gameState.screwsRemoved === false
-        };
-        if(canInstall[partType]) {
-             const cleanType = partType.replace('new-','');
-             gameState.parts[cleanType].installed = true;
-             gameState.parts[cleanType].in = 'game';
-             gameState.step++;
-             gameArea.appendChild(draggedItem);
-             const originalData = {
-                board: { text: '基板', size: 'w-[90%] h-[95%]', top: 5, left: 5 },
-                camera: { text: '■', size: 'w-1/4 h-1/6', top: 10, left: 10 },
-                battery: { text: 'バッテリー', size: 'w-3/4 h-1/2', top: 50, left: 12.5 },
-                screen: { text: 'ピカピカ！', size: 'w-full h-full', top: 0, left: 0 },
-             }[cleanType];
-             
-             draggedItem.id = cleanType;
-             draggedItem.className = `part ${cleanType} ${originalData.size} flex items-center justify-center`;
-             draggedItem.style.top = `${originalData.top}%`;
-             draggedItem.style.left = `${originalData.left}%`;
-             draggedItem.textContent = originalData.text;
-        }
-         updateGame();
-    }
-    
     // --- Screw & Tool Logic ---
-    function handleInstallScrews(e) {
-        if (gameState.selectedTool !== 'screwdriver') { messageEl.textContent = "ドライバーを選択してください！"; return; }
-        if (gameState.step === 8 && gameState.screwsRemoved) {
-            e.target.remove();
-            document.querySelectorAll('#game-area .screw').forEach(s => { s.style.display = 'block'; });
-            gameState.screwsRemoved = false;
-            gameState.step = 9;
-            updateGame();
-        }
-    }
-
-    function handleScrewClick(e) {
-        if (gameState.selectedTool !== 'screwdriver') { messageEl.textContent = "ドライバーを選択してください！"; return; }
-        if (gameState.step === 1 && !gameState.screwsRemoved) {
-            e.target.style.display = 'none';
-            let screwPile = document.getElementById('screw-pile');
-            if (!screwPile) {
-                screwPile = document.createElement('div');
-                screwPile.id = 'screw-pile';
-                screwPile.dataset.count = 0;
-                screwPile.className = 'tray-item p-4 text-center font-semibold text-gray-800 bg-gray-300 relative cursor-pointer';
-                screwPile.addEventListener('click', handleInstallScrews);
-                partsTray.appendChild(screwPile);
-            }
-            let count = parseInt(screwPile.dataset.count, 10) + 1;
-            screwPile.dataset.count = count;
-            screwPile.textContent = `ネジ (${count}/4)`;
-            if (Array.from(document.querySelectorAll('#game-area .screw')).every(s => s.style.display === 'none')) {
-                gameState.screwsRemoved = true;
-                gameState.step = 2;
-                updateGame();
-            }
-        }
-    }
-    
-    function selectTool(toolId) {
-        gameState.selectedTool = toolId;
-        document.querySelectorAll('.tool-item').forEach(t => t.classList.remove('selected'));
-        document.getElementById(toolId).classList.add('selected');
-        updateMessage();
-    }
+    function handleInstallScrews(e) { /* ... same as before ... */ }
+    function handleScrewClick(e) { /* ... same as before ... */ }
+    function selectTool(toolId) { /* ... same as before ... */ }
     
     // --- Update & Win Condition ---
     function updateGame() {
@@ -547,43 +396,48 @@
     }
 
     function updateMessage() { messageEl.textContent = gameState.messages[gameState.step]; }
-
-    function updateVisibility() {
-        const zIndices = { board: 1, camera: 2, battery: 3, screw: 4, screen: 5 };
-        document.querySelectorAll('#game-area .part, #game-area .screw').forEach(el => {
-            const id = el.id.includes('screw') ? 'screw' : el.id;
-            el.style.zIndex = zIndices[id] || 0;
-        });
-        document.getElementById('battery').style.visibility = gameState.parts.screen.removed ? 'visible' : 'hidden';
-        document.getElementById('camera').style.visibility = gameState.parts.battery.removed ? 'visible' : 'hidden';
-        document.getElementById('board').style.visibility = gameState.parts.camera.removed ? 'visible' : 'hidden';
-        document.querySelectorAll('#game-area .part').forEach(p => {
-            if(gameState.parts[p.id]?.installed){
-                 p.style.visibility = 'visible';
-            }
-        });
-    }
+    function updateVisibility() { /* ... same as before ... */ }
     
     function checkWinCondition() {
         if (gameState.step === 10) {
             clearInterval(timerInterval);
+            const timeTaken = 60 - timeLeft;
+            const oldHighScore = localStorage.getItem('repairGameHighScore');
+            let message = `お見事！ ${timeTaken}秒で修理できました！`;
+
+            if (!oldHighScore || timeTaken < parseInt(oldHighScore, 10)) {
+                localStorage.setItem('repairGameHighScore', timeTaken);
+                message = `新記録達成！ ${timeTaken}秒で修理できました！`;
+                displayHighScore();
+            }
+            
             gameState.step++;
             updateMessage();
-             setTimeout(() => {
-                showModal('修理完了！', `お見事！残り${timeLeft}秒で修理できました！`, 'もう一度遊ぶ', 'bg-green-500', 'hover:bg-green-600');
-            }, 500);
+            showModal('修理完了！', message, 'もう一度遊ぶ', 'bg-green-500', 'hover:bg-green-600');
         }
     }
 
-    [partsTray, gameArea].forEach(area => {
-        area.addEventListener('dragover', (e) => e.preventDefault());
-        area.addEventListener('drop', handleDrop);
-    });
-
+    [partsTray, gameArea].forEach(area => { /* ... same as before ... */ });
     resetButton.addEventListener('click', initGame);
     modalCloseButton.addEventListener('click', initGame);
-
     window.onload = initGame;
+    
+    // Stubbing out functions that are identical to the previous version to save space
+    handleDragStart = function(e) {draggedItem=e.target;setTimeout(()=>e.target.classList.add('dragging'),0);if(e.target.classList.contains('part')){partsTray.classList.add('drop-zone-active')}else{gameArea.classList.add('drop-zone-active')}};
+    handleDragEnd = function(e){if(draggedItem)draggedItem.classList.remove('dragging');draggedItem=null;partsTray.classList.remove('drop-zone-active');gameArea.classList.remove('drop-zone-active')};
+    handleDrop = function(e){e.preventDefault();if(!draggedItem)return;handleDropLogic(e.currentTarget)};
+    scrollLoop = function(){if(scrollDirection===0){isScrolling=false;return}window.scrollBy(0,10*scrollDirection);requestAnimationFrame(scrollLoop)};
+    handleTouchStart = function(e){if(e.touches.length!==1)return;e.preventDefault();draggedItem=e.currentTarget;const t=draggedItem.getBoundingClientRect();touchDragClone=draggedItem.cloneNode(!0);touchDragClone.classList.add('touch-drag-clone','dragging');document.body.appendChild(touchDragClone);touchOffsetX=e.touches[0].clientX-t.left;touchOffsetY=e.touches[0].clientY-t.top;touchDragClone.style.left=`${e.touches[0].clientX-touchOffsetX}px`;touchDragClone.style.top=`${e.touches[0].clientY-touchOffsetY}px`;touchDragClone.style.width=`${t.width}px`;draggedItem.classList.add('dragging');if(draggedItem.classList.contains('part')){partsTray.classList.add('drop-zone-active')}else{gameArea.classList.add('drop-zone-active')}};
+    handleTouchMove = function(e){if(!touchDragClone||e.touches.length!==1)return;e.preventDefault();const t=e.touches[0];touchDragClone.style.left=`${t.clientX-touchOffsetX}px`;touchDragClone.style.top=`${t.clientY-touchOffsetY}px`;const o=window.innerHeight*.15;if(t.clientY<o){scrollDirection=-1;if(!isScrolling){isScrolling=!0;requestAnimationFrame(scrollLoop)}}else if(t.clientY>window.innerHeight-o){scrollDirection=1;if(!isScrolling){isScrolling=!0;requestAnimationFrame(scrollLoop)}}else{scrollDirection=0}};
+    handleTouchEnd = function(e){scrollDirection=0;if(!touchDragClone||!draggedItem)return;const t=e.changedTouches[0].clientX,o=e.changedTouches[0].clientY;touchDragClone.style.display='none';const n=document.elementFromPoint(t,o);touchDragClone.style.display='';const c=n?n.closest('#game-area, #parts-tray'):null;if(c)handleDropLogic(c);draggedItem.classList.remove('dragging');document.body.removeChild(touchDragClone);touchDragClone=null;draggedItem=null;partsTray.classList.remove('drop-zone-active');gameArea.classList.remove('drop-zone-active')};
+    handleDropLogic = function(e){const t=draggedItem.id,o=draggedItem.dataset.partType,n=draggedItem.parentElement.id==='game-area';if(e.id==='parts-tray'&&n){handleRemovePart(t,o)}else if(e.id==='game-area'&&!n){handleInstallPart(t,o)}};
+    handleRemovePart = function(e,t){const o={screen:gameState.step===0,battery:gameState.step===2&&gameState.screwsRemoved,camera:gameState.step===3,board:gameState.step===4};if(o[t]){gameState.parts[t].removed=!0;gameState.parts[t].in='tray';gameState.step++;partsTray.appendChild(draggedItem);draggedItem.className=`tray-item ${t} p-4 text-center font-semibold text-gray-800 relative`;draggedItem.style=''}updateGame()};
+    handleInstallScrews = function(e){if(gameState.selectedTool!=='screwdriver'){messageEl.textContent="ドライバーを選択してください！";return}if(gameState.step===8&&gameState.screwsRemoved){e.target.remove();document.querySelectorAll('#game-area .screw').forEach(e=>{e.style.display='block'});gameState.screwsRemoved=!1;gameState.step=9;updateGame()}};
+    handleScrewClick = function(e){if(gameState.selectedTool!=='screwdriver'){messageEl.textContent="ドライバーを選択してください！";return}if(gameState.step===1&&!gameState.screwsRemoved){e.target.style.display='none';let t=document.getElementById('screw-pile');if(!t){t=document.createElement('div');t.id='screw-pile';t.dataset.count=0;t.className='tray-item p-4 text-center font-semibold text-gray-800 bg-gray-300 relative cursor-pointer';t.addEventListener('click',handleInstallScrews);partsTray.appendChild(t)}let o=parseInt(t.dataset.count,10)+1;t.dataset.count=o;t.textContent=`ネジ (${o}/4)`;if(Array.from(document.querySelectorAll('#game-area .screw')).every(e=>e.style.display==='none')){gameState.screwsRemoved=!0;gameState.step=2;updateGame()}}};
+    selectTool = function(e){gameState.selectedTool=e;document.querySelectorAll('.tool-item').forEach(e=>e.classList.remove('selected'));document.getElementById(e).classList.add('selected');updateMessage()};
+    updateVisibility = function(){const e={board:1,camera:2,battery:3,screw:4,screen:5};document.querySelectorAll('#game-area .part, #game-area .screw').forEach(t=>{const o=t.id.includes('screw')?'screw':t.id;t.style.zIndex=e[o]||0});document.getElementById('battery').style.visibility=gameState.parts.screen.removed?'visible':'hidden';document.getElementById('camera').style.visibility=gameState.parts.battery.removed?'visible':'hidden';document.getElementById('board').style.visibility=gameState.parts.camera.removed?'visible':'hidden';document.querySelectorAll('#game-area .part').forEach(e=>{if(gameState.parts[e.id]?.installed){e.style.visibility='visible'}})};
+    [partsTray, gameArea].forEach(e=>{e.addEventListener('dragover',t=>t.preventDefault());e.addEventListener('drop',handleDrop)});
+
     </script>
 </body>
 </html>
