@@ -12,6 +12,7 @@
         /* フォント設定 */
         body {
             font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            overflow: hidden; /* スクロールバーを隠す */
         }
 
         /* ゲームコンテナ：画面全体に広がり、背景画像を表示する */
@@ -44,6 +45,7 @@
             flex-direction: column;
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
+            box-sizing: border-box;
         }
 
         /* キャラクター名表示エリア */
@@ -141,6 +143,43 @@
             object-fit: contain;
             transition: opacity 0.5s ease-in-out;
             opacity: 0;
+            margin-bottom: 25%; /* テキストウィンドウとの重なりを避けるためのマージン */
+        }
+        
+        /* スマートフォン向けレスポンシブ対応 */
+        @media (max-width: 768px) {
+            #text-window {
+                height: 40%; /* 高さを少し増やす */
+                padding: 1rem;
+                bottom: 3%;
+                left: 3%;
+                right: 3%;
+            }
+
+            #character-name {
+                font-size: 1.1rem;
+                margin-bottom: 0.5rem;
+            }
+
+            #text-content {
+                font-size: 1rem;
+                line-height: 1.6;
+            }
+
+            #character-image {
+                max-width: 80%; /* キャラクターをより大きく表示 */
+                max-height: 65vh;
+                margin-bottom: 35%; /* スマートフォン用にマージン調整 */
+            }
+
+            #choice-container {
+                width: 90%;
+            }
+
+            .choice-button {
+                font-size: 1rem;
+                padding: 0.8rem 1rem;
+            }
         }
     </style>
 </head>
