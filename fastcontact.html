@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SF Visual Novel - Warp Drive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* フォント設定 */
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        }
+
+        /* ゲームコンテナ：画面全体に広がり、背景画像を表示する */
+        #game-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 1s ease-in-out;
+            background-color: #000;
+        }
+
+        /* テキストウィンドウ：画面下部に固定 */
+        #text-window {
+            position: absolute;
+            bottom: 5%;
+            left: 5%;
+            right: 5%;
+            height: 35%;
+            background-color: rgba(0, 0, 0, 0.75);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 2rem;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        /* キャラクター名表示エリア */
+        #character-name {
+            font-weight: bold;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: #87CEFA; /* Light Sky Blue */
+        }
+
+        /* テキスト表示エリア */
+        #text-content {
+            flex-grow: 1;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            overflow-y: auto;
+        }
+
+        /* 次へ進むインジケーター */
+        .next-indicator {
+            position: absolute;
+            bottom: 1rem;
+            right: 1.5rem;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 15px solid white;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        /* 選択肢コンテナ */
+        #choice-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+            width: 80%;
+            max-width: 600px;
+        }
+        
+        /* 選択肢ボタン */
+        .choice-button {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            background-color: rgba(0, 50, 100, 0.8);
+            color: white;
+            border: 2px solid rgba(135, 206, 250, 0.8);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .choice-button:hover {
+            background-color: rgba(0, 80, 150, 1);
+            border-color: white;
+            transform: scale(1.05);
+        }
+
+        /* キャラクター表示エリア */
+        #character-area {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            pointer-events: none; /* クリックを透過させる */
+        }
+
+        #character-image {
+            max-height: 90%;
+            max-width: 50%;
+            object-fit: contain;
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="bg-black">
+
+    <div id="game-container"></div>
+    <div id="character-area">
+        <img id="character-image" src="" alt="Character">
+    </div>
+    <div id="text-window" class="hidden">
+        <div id="character-name"></div>
+        <div id="text-content"></div>
+    </div>
+    <div id="choice-container"></div>
+
+<script type="module">
+    // ========================================================================
+    // シナリオデータ
+    // ========================================================================
+    const baseImageUrl = "https://raw.githubusercontent.com/Mikagecho/canvas/main/images/";
+
+    const scenario = {
+        // --- ゲーム開始 ---
+        "start": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_bridge.jpg",
+            characterName: "ハカセ",
+            text: "ついにこの日が来た。長年の研究が実を結び、私は未知の知的生命体との対面の席に立っている…。",
+            next: "contact_01"
+        },
+        "contact_01": {
+            type: "text",
+            characterImage: baseImageUrl + "char_alien_mysterious.jpg",
+            characterName: "？？？",
+            text: "『… … …』",
+            next: "contact_02"
+        },
+        "contact_02": {
+            type: "text",
+            characterImage: "",
+            characterName: "ハカセ",
+            text: "目の前にいるのは、データ上でしか見たことのなかった異星人。言葉は通じないはずだ。だが、直接脳内に響くような感覚がある。",
+            next: "contact_03"
+        },
+        "contact_03": {
+            type: "text",
+            characterImage: baseImageUrl + "char_alien_mysterious.jpg",
+            characterName: "異星人",
+            text: "『…何故、ここへ…？ なぜ我々の存在を…？ なぜこの航法を…？』",
+            next: "contact_choice_01"
+        },
+        "contact_choice_01": {
+            type: "choice",
+            backgroundImage: baseImageUrl + "bg_confrontation.jpg",
+            choices: [
+                { text: "友好的な意図を伝える", next: "recall_friendly_intro" },
+                { text: "こちらの技術力を示す", next: "recall_arrogant_intro" }
+            ]
+        },
+
+        // --- 回想ルート分岐：友好的 ---
+        "recall_friendly_intro": {
+            type: "text",
+            characterImage: "",
+            characterName: "ハカセ",
+            text: "（そうだ…私はただ、この世界の真理が知りたかっただけなんだ。純粋な探究心…それを伝えれば、きっと…）",
+            next: "recall_friendly_01"
+        },
+        "recall_friendly_01": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_lab_sunset.jpg",
+            characterImage: baseImageUrl + "char_hakase_young.jpg",
+            characterName: "ハカセ（回想・青年期）",
+            text: "ワープ航法の着想を得たのは、大学時代の恩師の一言がきっかけだった。『常識を疑え。不可能の壁の向こうにこそ、真理は眠っている』…先生の言葉が、私の道標となった。",
+            next: "recall_friendly_02"
+        },
+        "recall_friendly_02": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_library_night.jpg",
+            characterImage: baseImageUrl + "char_hakase_young.jpg",
+            characterName: "ハカセ（回想・青年期）",
+            text: "理論の構築は困難を極めた。何週間も図書館に籠り、膨大な古文書や論文を読み漁った。…だが、どうしても最後のピースが埋まらない。",
+            next: "recall_friendly_03"
+        },
+        "recall_friendly_03": {
+            type: "text",
+            characterImage: baseImageUrl + "char_sayaka_normal.jpg",
+            characterName: "サヤカ",
+            text: "「博士、また徹夜ですか？…その数式、もしかして…古代シュメール文明の楔形文字の変換則、使えませんか？」",
+            next: "recall_friendly_04"
+        },
+        "recall_friendly_04": {
+            type: "text",
+            characterImage: baseImageUrl + "char_hakase_surprised.jpg",
+            characterName: "ハカセ（回想・青年期）",
+            text: "「サヤカ君…！？なぜ君がそれを…。いや、まさか…！そうか、そういうことか！物理学と古代言語学…その発想はなかった！」",
+            next: "recall_friendly_choice"
+        },
+        "recall_friendly_choice": {
+            type: "choice",
+            choices: [
+                { text: "彼女の功績を称え、共同研究を提案する", next: "friendly_choice_A" },
+                { text: "ヒントに感謝し、研究を一人で完成させる", next: "friendly_choice_B" }
+            ]
+        },
+        "friendly_choice_A": {
+            type: "text",
+            characterImage: baseImageUrl + "char_sayaka_smile.jpg",
+            characterName: "ハカセ（回想・青年期）",
+            text: "「君は天才だ！この発見は君なしではあり得なかった。どうか、この研究の最後まで私に力を貸してくれないか？」",
+            next: "recall_friendly_05_A"
+        },
+        "recall_friendly_05_A": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_warpcore_bright.jpg",
+            characterImage: "",
+            characterName: "ナレーション",
+            text: "彼女との共同研究は、停滞していた理論を飛躍的に前進させた。分野の違う二つの知性が合わさった時、不可能は可能へと変わったのだ。",
+            next: "happy_end_prologue"
+        },
+        "friendly_choice_B": {
+            type: "text",
+            characterImage: baseImageUrl + "char_sayaka_sad.jpg",
+            characterName: "ハカセ（回想・青年期）",
+            text: "「ありがとう、サヤカ君。素晴らしいヒントだった。…あとは私一人でやれる。君は君の研究に戻りなさい」",
+            next: "recall_friendly_05_B"
+        },
+         "recall_friendly_05_B": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_warpcore_stable.jpg",
+            characterImage: "",
+             characterName: "ナレーション",
+            text: "彼女のヒントを元に、私は独力で理論を完成させた。道は拓かれたが、研究室には以前よりも静かな時間が流れるようになった。",
+            next: "neutral_end_prologue"
+        },
+
+        // --- 回想ルート分岐：高圧的 ---
+        "recall_arrogant_intro": {
+            type: "text",
+            characterImage: "",
+            characterName: "ハカセ",
+            text: "（なめるな…この技術を完成させるために、どれだけのものを犠牲にしてきたと思っている。対等な交渉などありえない）",
+            next: "recall_arrogant_01"
+        },
+        "recall_arrogant_01": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_meeting_room.jpg",
+            characterImage: baseImageUrl + "char_hakase_troubled.jpg",
+            characterName: "ハカセ（回想）",
+            text: "開発は困難を極めた。周囲の無理解、資金難…『夢物語だ』と、何度嘲笑されたことか。",
+            next: "recall_arrogant_02"
+        },
+        "recall_arrogant_02": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_conference.jpg",
+            characterImage: baseImageUrl + "char_kageyama.jpg",
+            characterName: "カゲヤマ教授",
+            text: "「諸君、彼の理論は机上の空論だ。非現実的な仮説に、これ以上国の大切な予算を割くわけにはいかない！」",
+            next: "recall_arrogant_03"
+        },
+        "recall_arrogant_03": {
+            type: "text",
+            characterImage: baseImageUrl + "char_hakase_angry.jpg",
+            characterName: "ハカセ（回想）",
+            text: "カゲヤマ…旧態依然の権威主義者め。奴の妨害で、私の研究は何度も頓挫しかけた。",
+            next: "recall_arrogant_choice"
+        },
+        "recall_arrogant_choice": {
+            type: "choice",
+            choices: [
+                { text: "彼の研究の不正をリークし、失脚させる", next: "arrogant_choice_A" },
+                { text: "海外のパトロンに情報を渡し、単独で研究を続ける", next: "arrogant_choice_B" }
+            ]
+        },
+        "arrogant_choice_A": {
+            type: "text",
+            characterImage: "",
+            characterName: "ナレーション",
+            text: "私は、彼の過去の研究におけるデータ改竄の証拠を掴んでいた。それを匿名でメディアに流した。彼の権威は失墜し、研究予算はこちらに回ってきた。",
+            next: "recall_arrogant_04_A"
+        },
+        "recall_arrogant_04_A": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_lab_lonely.jpg",
+            characterImage: baseImageUrl + "char_hakase_exhausted.jpg",
+            characterName: "ハカセ（回想）",
+            text: "目的のためなら手段は選ばなかった。多くのものを切り捨て、多くの敵を作った。そして…全てを独りで成し遂げた。",
+            next: "bad_end_prologue"
+        },
+        "arrogant_choice_B": {
+            type: "text",
+            characterImage: "",
+            characterName: "ナレーション",
+            text: "国内に見切りをつけた私は、かねてから接触のあった海外の巨大軍産複合体に研究データを渡した。見返りに、私は無限ともいえる資金と設備を手に入れた。",
+            next: "recall_arrogant_04_B"
+        },
+        "recall_arrogant_04_B": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_facility_vast.jpg",
+            characterImage: baseImageUrl + "char_hakase_ruthless.jpg",
+            characterName: "ハカセ（回想）",
+            text: "もう誰も私を止められない。純粋な探究心は、いつしか独占欲と支配欲へと変わっていたのかもしれない。",
+            next: "bad_end_prologue"
+        },
+
+        // --- エンディング ---
+        "happy_end_prologue": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_confrontation.jpg",
+            characterImage: baseImageUrl + "char_alien_understanding.jpg",
+            characterName: "異星人",
+            text: "『…あなたの純粋な探求の思念、そして他者と知性を分かち合う心、確かに届きました』",
+            next: "happy_end"
+        },
+        "happy_end": {
+            type: "end",
+            backgroundImage: baseImageUrl + "end_happy.jpg",
+            text: "私の真意が伝わったようだ。彼らの警戒心が解け、穏やかな思念が流れ込んでくる。『歓迎します、探求者よ』…こうして、人類と異星人の記念すべきファーストコンタクトは、成功に終わった。 HAPPY END"
+        },
+        "neutral_end_prologue": {
+             type: "text",
+            backgroundImage: baseImageUrl + "bg_confrontation.jpg",
+            characterImage: baseImageUrl + "char_alien_neutral.jpg",
+            characterName: "異星人",
+            text: "『…あなたの探究心は本物。ですが、その道はあまりに孤独。知性は分かち合うことで、より高みへ至るもの…』",
+            next: "neutral_end"
+        },
+        "neutral_end": {
+            type: "end",
+            backgroundImage: baseImageUrl + "end_neutral.jpg",
+            text: "彼らは敵意も好意も見せず、ただ静かに空間の彼方へ消えていった。私は偉業を成し遂げた。だが、手にしたのは広大な宇宙での、完全なる孤独だったのかもしれない。 NEUTRAL END"
+        },
+        "bad_end_prologue": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_confrontation.jpg",
+            characterImage: baseImageUrl + "char_alien_warning.jpg",
+            characterName: "異星人",
+            text: "『…あなたの傲慢な征服の思念、他者を踏み台にする魂。その危険な力を、これ以上進歩させるわけにはいかない』",
+            next: "bad_end"
+        },
+        "bad_end": {
+            type: "end",
+            backgroundImage: baseImageUrl + "end_bad.jpg",
+            text: "私の心が、彼らを刺激してしまったらしい。空間が歪み、彼らの船から放たれた赤い光が、私の船を包み込んでいく…。 BAD END"
+        }
+    };
+
+    // ========================================================================
+    // ゲームエンジン部分 (変更なし)
+    // ========================================================================
+    const gameContainer = document.getElementById('game-container');
+    const textWindow = document.getElementById('text-window');
+    const characterNameEl = document.getElementById('character-name');
+    const textContentEl = document.getElementById('text-content');
+    const choiceContainer = document.getElementById('choice-container');
+    const characterImageEl = document.getElementById('character-image');
+    
+    let currentSceneId = 'start';
+    let isTyping = false;
+    let typeWriterTimeout;
+
+    function createModal(message, onConfirm) {
+        const existingModal = document.getElementById('restart-modal');
+        if (existingModal) existingModal.remove();
+
+        const modalOverlay = document.createElement('div');
+        modalOverlay.id = 'restart-modal';
+        modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50';
+        
+        const modalContent = document.createElement('div');
+        modalContent.className = 'bg-gray-800 text-white p-8 rounded-lg shadow-xl text-center';
+        
+        const messageEl = document.createElement('p');
+        messageEl.className = 'mb-6 text-lg';
+        messageEl.textContent = message;
+        
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'flex justify-center gap-4';
+        
+        const confirmButton = document.createElement('button');
+        confirmButton.className = 'px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors';
+        confirmButton.textContent = 'はい';
+        confirmButton.onclick = () => {
+            onConfirm(true);
+            modalOverlay.remove();
+        };
+
+        const cancelButton = document.createElement('button');
+        cancelButton.className = 'px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors';
+        cancelButton.textContent = 'いいえ';
+        cancelButton.onclick = () => {
+            onConfirm(false);
+            modalOverlay.remove();
+        };
+
+        buttonContainer.appendChild(confirmButton);
+        buttonContainer.appendChild(cancelButton);
+        modalContent.appendChild(messageEl);
+        modalContent.appendChild(buttonContainer);
+        modalOverlay.appendChild(modalContent);
+        document.body.appendChild(modalOverlay);
+    }
+
+    function typeWriter(text, i = 0) {
+        isTyping = true;
+        if (i < text.length) {
+            textContentEl.innerHTML = text.substring(0, i + 1) + '<span class="blinking-cursor">|</span>';
+            typeWriterTimeout = setTimeout(() => typeWriter(text, i + 1), 50);
+        } else {
+            textContentEl.innerHTML = text;
+            isTyping = false;
+            if(scenario[currentSceneId].type === 'text') {
+                 const indicator = document.createElement('div');
+                 indicator.className = 'next-indicator';
+                 textContentEl.appendChild(indicator);
+            }
+        }
+    }
+    
+    function displayScene(sceneId) {
+        currentSceneId = sceneId;
+        const scene = scenario[sceneId];
+        if (!scene) {
+            console.error(`Scenario with id "${sceneId}" not found!`);
+            return;
+        }
+
+        choiceContainer.innerHTML = '';
+        
+        if (scene.backgroundImage) {
+            gameContainer.style.backgroundImage = `url('${scene.backgroundImage}')`;
+        }
+
+        if (scene.hasOwnProperty('characterImage')) {
+            characterImageEl.style.opacity = scene.characterImage ? '1' : '0';
+            if (scene.characterImage) {
+                characterImageEl.src = scene.characterImage;
+            }
+        }
+
+        if (scene.type === 'text' || scene.type === 'end') {
+            textWindow.classList.remove('hidden');
+            characterNameEl.textContent = scene.characterName || '';
+            textContentEl.innerHTML = '';
+            clearTimeout(typeWriterTimeout);
+            typeWriter(scene.text);
+
+        } else if (scene.type === 'choice') {
+            textWindow.classList.add('hidden');
+            scene.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice.text;
+                button.className = 'choice-button';
+                button.onclick = (e) => {
+                    e.stopPropagation();
+                    displayScene(choice.next);
+                };
+                choiceContainer.appendChild(button);
+            });
+        }
+    }
+
+    function handleInteraction() {
+        if (document.getElementById('restart-modal')) return;
+        
+        const scene = scenario[currentSceneId];
+        
+        if (isTyping) {
+            clearTimeout(typeWriterTimeout);
+            textContentEl.innerHTML = scene.text;
+            isTyping = false;
+            if(scene.type === 'text') {
+                 const indicator = document.createElement('div');
+                 indicator.className = 'next-indicator';
+                 textContentEl.appendChild(indicator);
+            }
+        } else {
+            if (scene.type === 'text' && scene.next) {
+                displayScene(scene.next);
+            } else if (scene.type === 'end') {
+                createModal('ゲームを最初からやり直しますか？', (shouldRestart) => {
+                    if (shouldRestart) {
+                        displayScene('start');
+                    }
+                });
+            }
+        }
+    }
+
+    document.body.addEventListener('click', handleInteraction);
+    document.body.addEventListener('touchstart', handleInteraction, { passive: true });
+
+    window.addEventListener('DOMContentLoaded', () => {
+        displayScene('start');
+    });
+</script>
+
+</body>
+</html>
