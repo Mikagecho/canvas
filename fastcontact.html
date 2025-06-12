@@ -138,18 +138,18 @@
         }
 
         #character-image {
-            max-height: 90%;
+            max-height: 80%;
             max-width: 50%;
             object-fit: contain;
             transition: opacity 0.5s ease-in-out;
             opacity: 0;
-            margin-bottom: 25%; /* テキストウィンドウとの重なりを避けるためのマージン */
+            margin-bottom: 38vh; /* PCでの表示マージンをvh基準に変更 */
         }
         
         /* スマートフォン向けレスポンシブ対応 */
         @media (max-width: 768px) {
             #text-window {
-                height: 40%; /* 高さを少し増やす */
+                height: 40%; 
                 padding: 1rem;
                 bottom: 3%;
                 left: 3%;
@@ -167,9 +167,9 @@
             }
 
             #character-image {
-                max-width: 80%; /* キャラクターをより大きく表示 */
-                max-height: 65vh;
-                margin-bottom: 35%; /* スマートフォン用にマージン調整 */
+                max-width: 80%;
+                max-height: 55vh; /* スマホでの最大高さを設定 */
+                margin-bottom: 42vh; /* スマホ用にマージン調整 (テキストウィンドウの高さ40% + 下部余白2% = 42%) */
             }
 
             #choice-container {
