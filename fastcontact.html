@@ -9,10 +9,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* フォント設定 */
-        body {
-            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        /* === 変更点 === */
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
             overflow: hidden; /* スクロールバーを隠す */
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
         }
 
         /* ゲームコンテナ：画面全体に広がり、背景画像を表示する */
@@ -23,7 +27,7 @@
             width: 100%;
             height: 100%;
             background-size: cover;
-            background-position: center;
+            background-position: center center; /* より明確に中央を指定 */
             background-repeat: no-repeat;
             transition: background-image 1s ease-in-out;
             background-color: #000;
@@ -195,7 +199,6 @@
     </div>
     <div id="choice-container"></div>
     
-    <!-- ★新規追加★ ゲームコーナー -->
     <div id="game-corner" class="hidden absolute inset-0 bg-black bg-opacity-90 flex-col justify-center items-center text-center z-40 p-4">
         <div class="bg-gray-800 bg-opacity-80 p-8 rounded-lg shadow-xl text-white max-w-lg w-full">
             <h2 class="text-3xl font-bold mb-4 text-cyan-300">ゲームコーナー</h2>
@@ -643,7 +646,7 @@
             if (scene.type === 'text' && scene.next) {
                 displayScene(scene.next);
             } else if (scene.type === 'end') {
-                createModal('ゲームを最初からやり直しますか？', (shouldRestart) => {
+                createModal('もう一度プレイしますか？', (shouldRestart) => {
                     if (shouldRestart) {
                         displayScene('start');
                     } else {
