@@ -137,14 +137,13 @@
             pointer-events: none; /* クリックを透過させる */
         }
 
-        /* === 変更点 === */
         #character-image {
-            max-height: 75%; /* PCでの最大高さを少し小さく */
-            max-width: 45%;  /* PCでの最大幅を少し小さく */
+            max-height: 75%;
+            max-width: 45%;
             object-fit: contain;
             transition: opacity 0.5s ease-in-out;
             opacity: 0;
-            margin-bottom: 40vh; /* PCでの表示マージンを増やして上に移動 */
+            margin-bottom: 40vh;
         }
         
         /* スマートフォン向けレスポンシブ対応 */
@@ -167,11 +166,10 @@
                 line-height: 1.6;
             }
 
-            /* === 変更点 === */
             #character-image {
-                max-width: 70%;  /* スマホでの最大幅を小さく */
-                max-height: 50vh; /* スマホでの最大高さを小さく */
-                margin-bottom: 45vh; /* スマホ用にマージンを増やして上に移動 */
+                max-width: 70%;
+                max-height: 50vh;
+                margin-bottom: 45vh;
             }
 
             #choice-container {
@@ -238,7 +236,8 @@
             backgroundImage: baseImageUrl + "bg_confrontation.jpg",
             choices: [
                 { text: "友好的な意図を伝える", next: "recall_friendly_intro" },
-                { text: "こちらの技術力を示す", next: "recall_arrogant_intro" }
+                { text: "こちらの技術力を示す", next: "recall_arrogant_intro" },
+                { text: "（信じられない…これが現実なのか？）", next: "recall_reluctant_intro" }
             ]
         },
 
@@ -387,7 +386,69 @@
             next: "bad_end_prologue"
         },
 
-        // --- エンディング ---
+        // --- ★新規追加★ 回想ルート分岐：人間的・現実的 ---
+        "recall_reluctant_intro": {
+            type: "text",
+            characterImage: "",
+            characterName: "ハカセ",
+            text: "（信じられるか…目の前に本物の異星人がいるなんて。歴史的な瞬間？馬鹿言え。俺は、ここから逃げ出す寸前だったんだぞ…）",
+            next: "recall_reluctant_01"
+        },
+        "recall_reluctant_01": {
+            type: "text",
+            backgroundImage: baseImageUrl + "bg_workshop.jpg",
+            characterImage: baseImageUrl + "char_hakase_reluctant.jpg",
+            characterName: "ハカセ（回想）",
+            text: "資金は底をつき、集めた仲間は次々と去っていった。ガラクタの山に囲まれ、俺は毎晩安物の酒を煽るしかなかった。",
+            next: "recall_reluctant_02"
+        },
+        "recall_reluctant_02": {
+            type: "text",
+            characterName: "ハカセ（回想）",
+            text: "「クソったれ！何がワープだ、何が人類の未来だ！こんなもの、ただの鉄クズじゃないか！売っ払って、南の島でのんびり暮らしてやる…！」",
+            next: "recall_reluctant_choice"
+        },
+        "recall_reluctant_choice": {
+            type: "choice",
+            choices: [
+                { text: "それでも、未来を信じてやり遂げる", next: "recall_reluctant_continue" },
+                { text: "もう疲れた…全てを投げ出す", next: "ship_incomplete_end_01" }
+            ]
+        },
+        "recall_reluctant_continue": {
+            type: "text",
+            characterImage: baseImageUrl + "char_hakase_determined.jpg",
+            characterName: "ハカセ（回想）",
+            text: "（…ここでやめたら、俺はただの負け犬だ。笑いたい奴には笑わせておけ。俺は、この手で歴史を作ってやる…！金と名声のためにな！）",
+            next: "recall_reluctant_03"
+        },
+        "recall_reluctant_03": {
+            type: "text",
+            characterName: "ナレーション",
+            text: "動機は不純だったかもしれない。だが、そのギラついた欲望が、彼を最後の奮起へと突き動かした。彼は残った全ての力を振り絞り、ついにワープコアを完成させた。",
+            next: "neutral_end_prologue" // 動機が不純だったため、ニュートラルエンドへ
+        },
+        
+        // --- ★新規追加★ 宇宙船が完成しないバッドエンド ---
+        "ship_incomplete_end_01": {
+            type: "text",
+            backgroundImage: baseImageUrl + "end_ship_incomplete.jpg",
+            characterImage: "",
+            characterName: "ナレーション",
+            text: "彼は最後のプライドを捨て、開発途中のパーツを二束三文で売り払った。手にした金で数日は安酒に溺れることができた。",
+            next: "ship_incomplete_end_02"
+        },
+        "ship_incomplete_end_02": {
+            type: "text",
+            text: "ワープ計画は、歴史の片隅に埋もれた。ある日、太陽系を通りかかった探査船が、微かなエネルギーの痕跡を記録したが…『未成熟な文明』として、注目することはなかった。",
+            next: "ship_incomplete_end_03"
+        },
+        "ship_incomplete_end_03": {
+            type: "end",
+            text: "人類が星の海へ乗り出す未来は、一人の男の諦めによって、永遠に失われた。 BAD END"
+        },
+
+        // --- 既存エンディング ---
         "happy_end_prologue": {
             type: "text",
             backgroundImage: baseImageUrl + "bg_confrontation.jpg",
