@@ -491,7 +491,7 @@
     };
 
     // ========================================================================
-    // ゲームエンジン部分 (変更なし)
+    // ゲームエンジン部分 (バグ修正済み)
     // ========================================================================
     const gameContainer = document.getElementById('game-container');
     const textWindow = document.getElementById('text-window');
@@ -576,11 +576,13 @@
             gameContainer.style.backgroundImage = `url('${scene.backgroundImage}')`;
         }
 
-        if (scene.hasOwnProperty('characterImage')) {
-            characterImageEl.style.opacity = scene.characterImage ? '1' : '0';
-            if (scene.characterImage) {
-                characterImageEl.src = scene.characterImage;
-            }
+        // === バグ修正箇所 ===
+        // シーンにキャラクター画像があるかチェックし、なければ非表示にする
+        if (scene.characterImage) {
+            characterImageEl.src = scene.characterImage;
+            characterImageEl.style.opacity = '1';
+        } else {
+            characterImageEl.style.opacity = '0';
         }
 
         if (scene.type === 'text' || scene.type === 'end') {
