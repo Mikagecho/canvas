@@ -194,6 +194,17 @@
         <div id="text-content"></div>
     </div>
     <div id="choice-container"></div>
+    
+    <!-- ★新規追加★ ゲームコーナー -->
+    <div id="game-corner" class="hidden absolute inset-0 bg-black bg-opacity-90 flex-col justify-center items-center text-center z-40 p-4">
+        <div class="bg-gray-800 bg-opacity-80 p-8 rounded-lg shadow-xl text-white max-w-lg w-full">
+            <h2 class="text-3xl font-bold mb-4 text-cyan-300">ゲームコーナー</h2>
+            <p class="mb-6">マサ・ヒロカワ博士より：<br>「最後までプレイしてくれてありがとう！<br>よければ、こちらのゲームも遊んでみてくれたまえ。」</p>
+            <a href="./index.html" class="inline-block px-8 py-3 bg-green-500 hover:bg-green-600 rounded-lg text-xl font-bold transition-colors shadow-lg">スマホ修理ゲーム</a>
+            <button id="restart-from-corner" class="mt-6 block mx-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">もう一度この物語をプレイ</button>
+        </div>
+    </div>
+
 
 <script type="module">
     // ========================================================================
@@ -491,7 +502,7 @@
     };
 
     // ========================================================================
-    // ゲームエンジン部分 (バグ修正済み)
+    // ゲームエンジン部分
     // ========================================================================
     const gameContainer = document.getElementById('game-container');
     const textWindow = document.getElementById('text-window');
@@ -499,10 +510,19 @@
     const textContentEl = document.getElementById('text-content');
     const choiceContainer = document.getElementById('choice-container');
     const characterImageEl = document.getElementById('character-image');
+    const gameCorner = document.getElementById('game-corner');
     
     let currentSceneId = 'start';
     let isTyping = false;
     let typeWriterTimeout;
+
+    function showGameCorner() {
+        textWindow.classList.add('hidden');
+        choiceContainer.innerHTML = '';
+        characterImageEl.style.opacity = '0';
+        gameCorner.classList.remove('hidden');
+        gameCorner.style.display = 'flex'; // flex display for centering
+    }
 
     function createModal(message, onConfirm) {
         const existingModal = document.getElementById('restart-modal');
@@ -576,8 +596,6 @@
             gameContainer.style.backgroundImage = `url('${scene.backgroundImage}')`;
         }
 
-        // === バグ修正箇所 ===
-        // シーンにキャラクター画像があるかチェックし、なければ非表示にする
         if (scene.characterImage) {
             characterImageEl.src = scene.characterImage;
             characterImageEl.style.opacity = '1';
@@ -608,7 +626,7 @@
     }
 
     function handleInteraction() {
-        if (document.getElementById('restart-modal')) return;
+        if (document.getElementById('restart-modal') || !gameCorner.classList.contains('hidden')) return;
         
         const scene = scenario[currentSceneId];
         
@@ -628,6 +646,8 @@
                 createModal('ゲームを最初からやり直しますか？', (shouldRestart) => {
                     if (shouldRestart) {
                         displayScene('start');
+                    } else {
+                        showGameCorner();
                     }
                 });
             }
@@ -636,6 +656,12 @@
 
     document.body.addEventListener('click', handleInteraction);
     document.body.addEventListener('touchstart', handleInteraction, { passive: true });
+
+    document.getElementById('restart-from-corner').onclick = () => {
+        gameCorner.classList.add('hidden');
+        gameCorner.style.display = 'none';
+        displayScene('start');
+    };
 
     window.addEventListener('DOMContentLoaded', () => {
         displayScene('start');
