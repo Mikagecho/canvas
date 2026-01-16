@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { ScenarioNode, Choice, GameState } from '@/data/types';
+import React, { useState } from 'react';
+import { Choice, GameState } from '@/data/types';
 import { scenarioData, openingLocation } from '@/data/scenario';
 import { TextDisplay } from './TextDisplay';
 
@@ -57,12 +57,11 @@ export default function GameEngine() {
     if (!currentNode) {
         return (
             <div className="w-full h-[100dvh] bg-black text-red-500 flex items-center justify-center p-10">
-                <p>Error: Node "{gameState.currentNodeId}" not found.</p>
+                <p>Error: Node &quot;{gameState.currentNodeId}&quot; not found.</p>
             </div>
         );
     }
 
-    // @ts-ignore
     const visibleChoices = currentNode.choices?.filter(choice => choice.condition ? choice.condition(gameState) : true);
 
     const handleTextComplete = () => {
@@ -118,10 +117,10 @@ export default function GameEngine() {
             />
 
             <TextDisplay
+                key={gameState.currentNodeId}
                 text={currentNode.text}
                 onComplete={handleTextComplete}
                 onNext={!isEnding ? handleNext : undefined}
-                isFullScreen={true}
             />
 
             {visibleChoices && visibleChoices.length > 0 && !isTyping && (

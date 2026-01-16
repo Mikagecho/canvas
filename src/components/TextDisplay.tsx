@@ -4,20 +4,15 @@ import React, { useState, useEffect } from 'react';
 interface TextDisplayProps {
     text: string;
     onComplete?: () => void;
-    onNext?: () => void; // 👈 追加：次のシーンに進むための関数を受け取る
+    onNext?: () => void;
     speed?: number;
-    isFullScreen?: boolean;
 }
 
-export const TextDisplay: React.FC<TextDisplayProps> = ({ text, onComplete, onNext, speed = 30, isFullScreen = false }) => {
+export const TextDisplay: React.FC<TextDisplayProps> = ({ text, onComplete, onNext, speed = 30 }) => {
     const [displayedText, setDisplayedText] = useState('');
     const [currentIndex, setCurrentIndex] = useState(0);
 
-    // テキストが変わったらリセット
-    useEffect(() => {
-        setDisplayedText('');
-        setCurrentIndex(0);
-    }, [text]);
+    // テキストが変わったらリセット（親コンポーネントで key を指定しているので、この useEffect は不要になりました）
 
     useEffect(() => {
         if (currentIndex < text.length) {
@@ -47,7 +42,7 @@ export const TextDisplay: React.FC<TextDisplayProps> = ({ text, onComplete, onNe
     };
 
     return (
-        <div 
+        <div
             className={`
                 absolute bottom-0 w-full p-6 md:p-10
                 bg-gradient-to-t from-black via-black/90 to-transparent
