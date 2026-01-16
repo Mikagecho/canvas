@@ -398,7 +398,7 @@ export const scenarioData: Record<string, ScenarioNode> = {
     'node_gag_pre_reveal': {
         id: 'node_gag_pre_reveal',
         text: '「……帰ろう」\n直感的にヤバイ気配を感じた僕は、回れ右をした。\nだが、彼女がガシッと腕を掴んでくる。\n「ダメよ。せっかく来たんだから」',
-        backgroundId: '/images/bg/bg_mansion_gate.png',
+        backgroundId: '/images/bg/node_gag_pre_reveal.png',
         next: 'node_gag_hall_dark'
     },
     'node_gag_hall_dark': {
