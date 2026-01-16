@@ -4,12 +4,14 @@ import React, { useState } from 'react';
 import { Choice, GameState } from '@/data/types';
 import { scenarioData, openingLocation } from '@/data/scenario';
 import { TextDisplay } from './TextDisplay';
+import { getAssetPath } from '@/utils/paths';
+
 
 const BackgroundLayer = ({ bgId, children }: { bgId: string, children: React.ReactNode }) => (
     <div className="relative w-full h-[100dvh] bg-gray-900 overflow-hidden touch-manipulation">
         <div
             className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
-            style={{ backgroundImage: `url('${bgId}')` }}
+            style={{ backgroundImage: `url('${getAssetPath(bgId)}')` }}
         >
             <div className="absolute inset-0 bg-black/40" />
         </div>
